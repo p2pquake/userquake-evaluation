@@ -1,9 +1,14 @@
 class OldStrategy
+  def initialize(level = 3)
+    @level = level
+  end
+
   def evaluate(userquakes, areapeer)
-    @result = { truly: false, reliability: 0, reliabilities_by_area: {} }
+    result = { truly: false, reliability: 0, reliabilities_by_area: {} }
 
-    return @result if userquakes.size < 3
+    return result if userquakes.size < 3
 
+    # WIP: 3件〜全件まで全探索する必要がある
     speed = userquakes.size.to_f / (Time.parse(userquakes.last["time"]) - Time.parse(userquakes.first["time"]))
     rate  = userquakes.size.to_f / areapeer["areas"].map { |area| area["peer"] }.sum
 
@@ -18,6 +23,35 @@ class OldStrategy
       group_by { |userquake| userquake["area"] / 100 }.
       map { |uq_region, region_userquakes| region_userquakes.size.to_f / userquakes.size }.max || 0
 
-    [userquakes.size, speed, rate, area_rate, region_rate]
+    factor = [0.875, 1.0, 1.2, 1.4][@level - 1]
+
+    if speed >= 0.25 * factor && area_rate >= 0.05 * factor
+      result[:truly] = true
+    end
+
+    if speed >= 0.15 * factor && area_rate >= 0.3 * factor
+      result[:truly] = true
+    end
+
+    if rate >= 0.01 * factor && area_rate >= 0.035 * factor
+      result[:truly] = true
+    end
+
+    if rate >= 0.006 * factor && area_rate >= 0.04 * factor && region_rate >= [1 * factor, 1.0].min
+      result[:truly] = true
+    end
+
+    if speed >= 0.18 * factor && area_rate >= 0.04 * factor && region_rate >= [1 * factor, 1.0].min
+      result[:truly] = true
+    end
+
+    result[:appendix] = {
+      speed: speed,
+      rate: rate,
+      area_rate: area_rate,
+      region_rate: region_rate
+    }
+
+    result
   end
 end
