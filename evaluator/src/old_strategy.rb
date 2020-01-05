@@ -1,3 +1,5 @@
+require 'time'
+
 class OldStrategy
   def initialize(level = 3)
     @level = level
