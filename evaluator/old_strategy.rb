@@ -8,48 +8,51 @@ class OldStrategy
 
     return result if userquakes.size < 3
 
-    # WIP: 3件〜全件まで全探索する必要がある
-    speed = userquakes.size.to_f / (Time.parse(userquakes.last["time"]) - Time.parse(userquakes.first["time"]))
-    rate  = userquakes.size.to_f / areapeer["areas"].map { |area| area["peer"] }.sum
+    3.upto(userquakes.size) { |take_count|
+      picked_userquakes = userquakes.take(take_count)
 
-    area_rate = userquakes.
-      reject { |userquake| userquake["area"] / 100 == 9 }.
-      group_by { |userquake| userquake["area"] }.
-      select { |uq_area, area_userquakes| areapeer["areas"].map { |area| area["id"] }.include?(uq_area) }.
-      map { |uq_area, area_userquakes| area_userquakes.size.to_f / areapeer["areas"].find { |area| area["id"] == uq_area }["peer"] }.max || 0
+      speed = picked_userquakes.size.to_f / (Time.parse(picked_userquakes.last["time"]) - Time.parse(picked_userquakes.first["time"]))
+      rate  = picked_userquakes.size.to_f / areapeer["areas"].map { |area| area["peer"] }.sum
 
-    region_rate = userquakes.
-      reject { |userquake| userquake["area"] / 100 == 9 }.
-      group_by { |userquake| userquake["area"] / 100 }.
-      map { |uq_region, region_userquakes| region_userquakes.size.to_f / userquakes.size }.max || 0
+      area_rate = picked_userquakes.
+        reject { |userquake| userquake["area"] / 100 == 9 }.
+        group_by { |userquake| userquake["area"] }.
+        select { |uq_area, area_userquakes| areapeer["areas"].map { |area| area["id"] }.include?(uq_area) }.
+        map { |uq_area, area_userquakes| area_userquakes.size.to_f / areapeer["areas"].find { |area| area["id"] == uq_area }["peer"] }.max || 0
 
-    factor = [0.875, 1.0, 1.2, 1.4][@level - 1]
+      region_rate = picked_userquakes.
+        reject { |userquake| userquake["area"] / 100 == 9 }.
+        group_by { |userquake| userquake["area"] / 100 }.
+        map { |uq_region, region_userquakes| region_userquakes.size.to_f / picked_userquakes.size }.max || 0
 
-    if speed >= 0.25 * factor && area_rate >= 0.05 * factor
-      result[:truly] = true
-    end
+      factor = [0.875, 1.0, 1.2, 1.4][@level - 1]
 
-    if speed >= 0.15 * factor && area_rate >= 0.3 * factor
-      result[:truly] = true
-    end
+      if speed >= 0.25 * factor && area_rate >= 0.05 * factor
+        result[:truly] = true
+      end
 
-    if rate >= 0.01 * factor && area_rate >= 0.035 * factor
-      result[:truly] = true
-    end
+      if speed >= 0.15 * factor && area_rate >= 0.3 * factor
+        result[:truly] = true
+      end
 
-    if rate >= 0.006 * factor && area_rate >= 0.04 * factor && region_rate >= [1 * factor, 1.0].min
-      result[:truly] = true
-    end
+      if rate >= 0.01 * factor && area_rate >= 0.035 * factor
+        result[:truly] = true
+      end
 
-    if speed >= 0.18 * factor && area_rate >= 0.04 * factor && region_rate >= [1 * factor, 1.0].min
-      result[:truly] = true
-    end
+      if rate >= 0.006 * factor && area_rate >= 0.04 * factor && region_rate >= [1 * factor, 1.0].min
+        result[:truly] = true
+      end
 
-    result[:appendix] = {
-      speed: speed,
-      rate: rate,
-      area_rate: area_rate,
-      region_rate: region_rate
+      if speed >= 0.18 * factor && area_rate >= 0.04 * factor && region_rate >= [1 * factor, 1.0].min
+        result[:truly] = true
+      end
+
+      result[:appendix] = {
+        speed: speed,
+        rate: rate,
+        area_rate: area_rate,
+        region_rate: region_rate
+      }
     }
 
     result
