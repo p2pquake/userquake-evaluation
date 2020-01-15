@@ -7,8 +7,18 @@ class OldStrategy
 
   def evaluate(userquakes, areapeer)
     result = { truly: false, reliability: 0, reliabilities_by_area: {} }
-
     return result if userquakes.size < 3
+
+    result.merge!(judge_truly(userquakes, areapeer))
+    result.merge!(calc_reliability(userquakes, areapeer))
+
+    result
+  end
+
+  private
+
+  def judge_truly(userquakes, areapeer)
+    result = {}
 
     3.upto(userquakes.size) { |take_count|
       picked_userquakes = userquakes.take(take_count)
@@ -55,8 +65,15 @@ class OldStrategy
         area_rate: area_rate,
         region_rate: region_rate
       }
+
+      result[:debug] = [] unless result[:debug]
+      result[:debug] << result[:appendix]
     }
 
     result
+  end
+
+  def calc_reliability(userquakes, areapeer)
+    {}
   end
 end
