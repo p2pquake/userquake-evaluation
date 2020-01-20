@@ -74,6 +74,18 @@ class OldStrategy
   end
 
   def calc_reliability(userquakes, areapeer)
-    {}
+    result = { }
+
+    3.upto(userquakes.size) { |take_count|
+      picked_userquakes = userquakes.take(take_count)
+
+      # 各種パラメタ計算
+      count_by_area = picked_userquakes.group_by { |userquake| userquake["area"] }.map { |k, v| [k, v.size] }.to_h
+      count_by_pref = picked_userquakes.group_by { |userquake| userquake["area"] / 10 * 10 }.map { |k, v| [k, v.size] }.to_h
+      count_by_region = picked_userquakes.group_by { |userquake| userquake["area"] / 100 * 100 }.map { |k, v| [k, v.size] }.to_h
+
+      result.merge!({ count_by_area: count_by_area, count_by_pref: count_by_pref, count_by_region: count_by_region })
+    }
+    result
   end
 end
