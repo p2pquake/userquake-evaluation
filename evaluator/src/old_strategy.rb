@@ -74,10 +74,13 @@ class OldStrategy
   end
 
   def calc_reliability(userquakes, areapeer)
-    result = { percent_by_area: {} }
+    result = { percent_by_area: {}, reliabilities_by_area: {} }
     peer_by_area = areapeer["areas"].map { |area| [area["id"], area["peer"]] }.to_h
     peer_by_pref = areapeer["areas"].map { |area| [area["id"] / 10, area["peer"]] }.to_h
     peer_by_region = areapeer["areas"].map { |area| [area["id"] / 100, area["peer"]] }.to_h
+
+    # FIXME: reliabilitiesの計算はまだ実施していない
+    userquakes.take(2).each { |userquake| result[:reliabilities_by_area][userquake["area"]] = 1 }
 
     3.upto(userquakes.size) { |take_count|
       picked_userquakes = userquakes.take(take_count)
