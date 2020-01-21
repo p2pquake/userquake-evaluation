@@ -74,15 +74,29 @@ class OldStrategy
   end
 
   def calc_reliability(userquakes, areapeer)
-    result = { }
+    result = { percent_by_area: {} }
+    peer_by_area = areapeer["areas"].map { |area| [area["id"], area["peer"]] }.to_h
+    peer_by_pref = areapeer["areas"].map { |area| [area["id"] / 10, area["peer"]] }.to_h
+    peer_by_region = areapeer["areas"].map { |area| [area["id"] / 100, area["peer"]] }.to_h
 
     3.upto(userquakes.size) { |take_count|
       picked_userquakes = userquakes.take(take_count)
 
       # 各種パラメタ計算
       count_by_area = picked_userquakes.group_by { |userquake| userquake["area"] }.map { |k, v| [k, v.size] }.to_h
-      count_by_pref = picked_userquakes.group_by { |userquake| userquake["area"] / 10 * 10 }.map { |k, v| [k, v.size] }.to_h
-      count_by_region = picked_userquakes.group_by { |userquake| userquake["area"] / 100 * 100 }.map { |k, v| [k, v.size] }.to_h
+      count_by_pref = picked_userquakes.group_by { |userquake| userquake["area"] / 10 }.map { |k, v| [k, v.size] }.to_h
+      count_by_region = picked_userquakes.group_by { |userquake| userquake["area"] / 100 }.map { |k, v| [k, v.size] }.to_h
+
+      count_by_area.each { |area, count|
+        next if !peer_by_area[area]
+
+        percent = count.to_f / peer_by_area[area] * 100
+        percent *= count_by_pref[area / 10].to_f / peer_by_pref[area / 10] * 5 + 1
+        percent *= count_by_region[area / 100].to_f / peer_by_region[area / 100] * 5 + 1
+        percent = [[0, percent].max, 100].min
+
+        result[:percent_by_area][area] = [result[:percent_by_area][area] || 0, percent].max
+      }
 
       result.merge!({ count_by_area: count_by_area, count_by_pref: count_by_pref, count_by_region: count_by_region })
     }
