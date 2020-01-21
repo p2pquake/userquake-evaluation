@@ -91,6 +91,11 @@ class OldStrategy
         next if !peer_by_area[area]
 
         percent = count.to_f / peer_by_area[area] * 100
+        if count / peer_by_area.values.sum.to_f < 0.01
+          percent *= count / peer_by_area.values.sum.to_f * 100
+        else
+          percent *= 1.2
+        end
         percent *= count_by_pref[area / 10].to_f / peer_by_pref[area / 10] * 5 + 1
         percent *= count_by_region[area / 100].to_f / peer_by_region[area / 100] * 5 + 1
         percent = [[0, percent].max, 100].min
