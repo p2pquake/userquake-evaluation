@@ -79,7 +79,6 @@ class OldStrategy
     peer_by_pref = areapeer["areas"].map { |area| [area["id"] / 10, area["peer"]] }.to_h
     peer_by_region = areapeer["areas"].map { |area| [area["id"] / 100, area["peer"]] }.to_h
 
-    # FIXME: reliabilitiesの計算はまだ実施していない
     userquakes.take(2).each { |userquake| result[:reliabilities_by_area][userquake["area"]] = 1 }
 
     3.upto(userquakes.size) { |take_count|
@@ -93,6 +92,17 @@ class OldStrategy
       count_by_area.each { |area, count|
         next if !peer_by_area[area]
 
+        # 表示判定
+        # FIXME: 座標による表示判定未実装
+        if !result[:reliabilities_by_area][area] &&
+            (
+              (count_by_area[area] >= 3 && count_by_area[area].to_f / peer_by_area[area] >= 0.5) ||
+              (count_by_area[area] >= 5 && count_by_area[area].to_f / peer_by_area[area] >= 0.1)
+            )
+          result[:reliabilities_by_area][area] = 1
+        end
+
+        # 信頼度
         percent = count.to_f / peer_by_area[area] * 100
         if count / peer_by_area.values.sum.to_f < 0.01
           percent *= count / peer_by_area.values.sum.to_f * 100
