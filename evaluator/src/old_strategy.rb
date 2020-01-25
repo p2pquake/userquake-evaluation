@@ -224,6 +224,23 @@ class OldStrategy
 
     userquakes.take(2).each { |userquake| result[:reliabilities_by_area][userquake["area"]] = 1 }
 
+    # 表示判定
+    3.upto(userquakes.size) { |take_count|
+      picked_userquakes = userquakes.take(take_count)
+
+      # 発信数による
+      count_by_area = picked_userquakes.group_by { |userquake| userquake["area"] }.map { |k, v| [k, v.size] }.to_h.select { |area, count| peer_by_area[area] }
+      count_by_area.each { |area, count|
+        if !result[:reliabilities_by_area][area] &&
+            (
+              (count_by_area[area] >= 3 && count_by_area[area].to_f / peer_by_area[area] >= 0.5) ||
+              (count_by_area[area] >= 5 && count_by_area[area].to_f / peer_by_area[area] >= 0.1)
+            )
+          result[:reliabilities_by_area][area] = 1
+        end
+      }
+    }
+
     3.upto(userquakes.size) { |take_count|
       picked_userquakes = userquakes.take(take_count)
 
@@ -234,16 +251,6 @@ class OldStrategy
 
       count_by_area.each { |area, count|
         next if !peer_by_area[area]
-
-        # 表示判定
-        # FIXME: 座標による表示判定未実装
-        if !result[:reliabilities_by_area][area] &&
-            (
-              (count_by_area[area] >= 3 && count_by_area[area].to_f / peer_by_area[area] >= 0.5) ||
-              (count_by_area[area] >= 5 && count_by_area[area].to_f / peer_by_area[area] >= 0.1)
-            )
-          result[:reliabilities_by_area][area] = 1
-        end
 
         # 信頼度
         percent = count.to_f / peer_by_area[area] * 100
