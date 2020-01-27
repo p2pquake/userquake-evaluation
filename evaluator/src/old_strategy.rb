@@ -4,20 +4,20 @@ class OldStrategy
   ALLOW_X_RANGE = 35
   ALLOW_Y_RANGE = 45
   AREA_POSITIONS = {
-    010 => [459, 88],
-    015 => [426, 120],
-    020 => [398, 118],
-    025 => [439, 88],
-    030 => [480, 79],
-    035 => [504, 74],
-    040 => [476, 55],
-    045 => [480, 21],
-    050 => [530, 68],
-    055 => [444, 101],
-    060 => [503, 110],
-    065 => [524, 93],
-    070 => [557, 88],
-    075 => [576, 80],
+    10 => [459, 88],
+    15 => [426, 120],
+    20 => [398, 118],
+    25 => [439, 88],
+    30 => [480, 79],
+    35 => [504, 74],
+    40 => [476, 55],
+    45 => [480, 21],
+    50 => [530, 68],
+    55 => [444, 101],
+    60 => [503, 110],
+    65 => [524, 93],
+    70 => [557, 88],
+    75 => [576, 80],
     100 => [421, 163],
     105 => [444, 172],
     106 => [444, 140],
@@ -227,6 +227,23 @@ class OldStrategy
     # 表示判定
     3.upto(userquakes.size) { |take_count|
       picked_userquakes = userquakes.take(take_count)
+
+      # 座標による
+      result[:reliabilities_by_area].keys.map { |area| AREA_POSITIONS[area] }.compact.yield_self { |positions|
+        [
+          [positions.map(&:first).min, positions.map(&:first).max],
+          [positions.map(&:last).min,  positions.map(&:last).max]
+        ]
+      }.tap { |positions|
+        area = picked_userquakes.last["area"]
+        position = AREA_POSITIONS[area]
+
+        if position &&
+            position[0] >= positions[0][0] - ALLOW_X_RANGE && position[0] <= positions[0][1] + ALLOW_X_RANGE &&
+            position[1] >= positions[1][0] - ALLOW_Y_RANGE && position[1] <= positions[1][1] + ALLOW_Y_RANGE
+          result[:reliabilities_by_area][area] = 1
+        end
+      }
 
       # 発信数による
       count_by_area = picked_userquakes.group_by { |userquake| userquake["area"] }.map { |k, v| [k, v.size] }.to_h.select { |area, count| peer_by_area[area] }
