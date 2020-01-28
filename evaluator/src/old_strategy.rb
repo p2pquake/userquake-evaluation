@@ -285,6 +285,18 @@ class OldStrategy
 
       result.merge!({ count_by_area: count_by_area, count_by_pref: count_by_pref, count_by_region: count_by_region })
     }
+
+    result[:reliabilities_by_area] = result[:reliabilities_by_area].map { |area, flag|
+      [
+        area,
+        if flag != 1
+          "F"
+        else
+          ["E", "D", "C", "B", "A", "A"][((result[:percent_by_area][area] || 0) / 20).to_i]
+        end
+      ]
+    }.to_h
+
     result
   end
 end
